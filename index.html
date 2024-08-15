@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NOTAM Drag and Drop - Pages 1-9</title>
+    <style>
+        #title-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #title {
+            font-size: 48px; /* Increased font size */
+            position: relative;
+        }
+
+        #hidden-next {
+            cursor: pointer; /* Change cursor to pointer for clickable effect */
+        }
+
+        #hyperlink {
+            position: absolute;
+            right: 200px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px; /* Increased font size */
+        }
+
+        #notam-title {
+            text-align: left;
+            font-size: 36px;
+            margin-bottom: 40px;
+	    font-weight: normal; /* Ensure font is not bold */
+        }
+
+        #notam-description {
+            text-align: left;
+            font-size: 36px;
+        }
+
+        #word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 50px;
+            justify-content: left; /* Aligns the word bank to the left */
+        }
+
+        .draggable {
+            padding: 10px;
+            background-color: lightblue;
+            border: 1px solid #ddd;
+            cursor: grab;
+            text-align: center; /* Centers text in draggable items */
+            min-width: 100px; /* Ensures a minimum width */
+        }
+
+        .template {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Allows wrapping in the template */
+        }
+
+        .left-aligned {
+            justify-content: flex-start; /* Aligns items to the left */
+        }
+
+        .dropzone-container {
+            text-align: center;
+            margin: 5px; /* Adds margin around each container */
+        }
+
+        .dropzone {
+            padding: 2px;
+            min-width: 200px;
+            min-height: 30px; /* Adjusted height for better dropzone visibility */
+            background-color: #f4f4f4;
+            border: 5px dashed #ccc;
+            margin-bottom: 10px; /* Increased margin for spacing */
+        }
+
+        #resetButton, #backButton, #skipButton, #finishButton {
+            padding: 10px 20px;
+            background-color: #f8f8f8;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s; /* Smooth color transition */
+        }
+
+        #resetButton:hover, #backButton:hover, #skipButton:hover, #finishButton:hover {
+            background-color: #e0e0e0; /* Changes background on hover */
+        }
+
+        #finishButton {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="title-container">
+    <h2 id="title">
+        NO<span id="hidden-next" style="text-decoration: none;">T</span>AM Structure
+    </h2>
+    <a id="hyperlink" href="https://www.faa.gov/documentLibrary/media/Order/7930.2T_Bsc_dtd_12_14_23_FINAL.pdf" target="_blank">7930.2T</a>
+</div>
+
+<h3 id="notam-title">NOTAM 1</h3>
+
+<p id="notam-description"></p>
+
+<div id="word-bank"></div>
+
+<div class="template"></div>
+<div class="template left-aligned"></div>
+
+<button id="resetButton">Reset</button>
+<button id="backButton" style="display: none;">Back</button>
+<button id="skipButton" style="display: none;">Next</button>
+<button id="finishButton" style="display: none;">FINISH</button>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+    $(document).ready(function() {
+        const originalDraggablesHtml = {
+            1: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="ENA">ENA</div>
+                <div class="draggable" data-type="00/000">00/000</div>
+                <div class="draggable" data-type="ENA">ENA</div>
+                <div class="draggable" data-type="RWY">RWY</div>
+                <div class="draggable" data-type="02L/20R">02L/20R</div>
+                <div class="draggable" data-type="WIP">WIP</div>
+                <div class="draggable" data-type="LIGHT REPLACEMENT">LIGHT REPLACEMENT</div>
+                <div class="draggable" data-type="2405011800">2405011800</div>
+                <div class="draggable" data-type="2409092359">2409092359</div>
+            `,
+            2: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="HOM">HOM</div>
+                <div class="draggable" data-type="01/003">01/003</div>
+                <div class="draggable" data-type="HOM">HOM</div>
+                <div class="draggable" data-type="TWY">TWY</div>
+                <div class="draggable" data-type="A">A</div>
+                <div class="draggable" data-type="CLSD">CLSD</div>
+                <div class="draggable" data-type="2402011600">2402011600</div>
+                <div class="draggable" data-type="2402011800">2402011800</div>
+            `,
+            3: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="ENA">ENA</div>
+                <div class="draggable" data-type="07/123">07/123</div>
+                <div class="draggable" data-type="ENA">ENA</div>
+                <div class="draggable" data-type="OBST">OBST</div>
+                <div class="draggable" data-type="CRANE">CRANE</div>
+                <div class="draggable" data-type="ASN UNKNOWN">ASN UNKNOWN</div>
+                <div class="draggable" data-type="603340N1511510W">603340N1511510W</div>
+                <div class="draggable" data-type="(.25NM SE ENA)">(.25NM SE ENA)</div>
+                <div class="draggable" data-type="UNKNOWN">UNKNOWN</div>
+                <div class="draggable" data-type="(65FT AGL)">(65FT AGL)</div>
+                <div class="draggable" data-type="NOT LGTD">NOT LGTD</div>
+                <div class="draggable" data-type="2405301600">2405301600</div>
+                <div class="draggable" data-type="2405310100">2405310100</div>
+            `,
+            4: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="JNU">JNU</div>
+                <div class="draggable" data-type="05/029">05/029</div>
+                <div class="draggable" data-type="JNU">JNU</div>
+                <div class="draggable" data-type="OBST">OBST</div>
+                <div class="draggable" data-type="TOWER LGT">TOWER LGT</div>
+                <div class="draggable" data-type="(ASR 1028325)">(ASR 1028325)</div>
+                <div class="draggable" data-type="581804.00N1342632.00W">581804.00N1342632.00W</div>
+                <div class="draggable" data-type="(5.4NM ESE JNU)">(5.4NM ESE JNU)</div>
+                <div class="draggable" data-type="285.8FT">285.8FT</div>
+                <div class="draggable" data-type="(277.9FT AGL)">(277.9FT AGL)</div>
+                <div class="draggable" data-type="U/S">U/S</div>
+                <div class="draggable" data-type="2405201955">2405201955</div>
+                <div class="draggable" data-type="2409011955">2409011955</div>
+            `,
+            5: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="ENA">ENA</div>
+                <div class="draggable" data-type="02/001">02/001</div>
+                <div class="draggable" data-type="AQY">AQY</div>
+                <div class="draggable" data-type="AD">AD</div>
+                <div class="draggable" data-type="ALL SFC">ALL SFC</div>
+                <div class="draggable" data-type="WIP">WIP</div>
+                <div class="draggable" data-type="SN REMOVAL">SN REMOVAL</div>
+                <div class="draggable" data-type="2402201800">2402201800</div>
+                <div class="draggable" data-type="2402211800">2402211800</div>
+            `,
+            6: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="ANC">ANC</div>
+                <div class="draggable" data-type="06/010">06/010</div>
+                <div class="draggable" data-type="ANC">ANC</div>
+                <div class="draggable" data-type="AIRSPACE">AIRSPACE</div>
+                <div class="draggable" data-type="UAS">UAS</div>
+                <div class="draggable" data-type="WI AN AREA DEFINED AS 0.5NM RADIUS OF">WI AN AREA DEFINED AS 0.5NM RADIUS OF</div>
+                <div class="draggable" data-type="612418N1500400W">612418N1500400W</div>
+                <div class="draggable" data-type="(BGQ178011)">(BGQ178011)</div>
+                <div class="draggable" data-type="SFC-1200FT">SFC-1200FT</div>
+                <div class="draggable" data-type="DLY 1700-0700">DLY 1700-0700</div>
+                <div class="draggable" data-type="2406081700">2406081700</div>
+                <div class="draggable" data-type="2406170700">2406170700</div>
+            `,
+            7: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="SCC">SCC</div>
+                <div class="draggable" data-type="05/085">05/085</div>
+                <div class="draggable" data-type="SCC">SCC</div>
+                <div class="draggable" data-type="AD">AD</div>
+                <div class="draggable" data-type="AP">AP</div>
+                <div class="draggable" data-type="INCREASED MIGRATORY BIRD AND WATERFOWL ACT">INCREASED MIGRATORY BIRD AND WATERFOWL ACT</div>
+                <div class="draggable" data-type="2405101425">2405101425</div>
+                <div class="draggable" data-type="2409302359">2409302359</div>
+                <div class="draggable" data-type="AIRPORT">AIRPORT</div>
+                <div class="draggable" data-type="MEN AND EQUIPMENT">MEN AND EQUIPMENT</div>
+                <div class="draggable" data-type="OTZ">OTZ</div>
+                <div class="draggable" data-type="INCREASED FLIES ON THE POND">INCREASED FLIES ON THE POND</div>
+            `,
+            8: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="BRW">BRW</div>
+                <div class="draggable" data-type="02/258">02/258</div>
+                <div class="draggable" data-type="BRW">BRW</div>
+                <div class="draggable" data-type="NAV">NAV</div>
+                <div class="draggable" data-type="ILS RWY 8">ILS RWY 8</div>
+                <div class="draggable" data-type="DME">DME</div>
+                <div class="draggable" data-type="NOT MNT">NOT MNT</div>
+                <div class="draggable" data-type="2402171205">2402171205</div>
+                <div class="draggable" data-type="2406301500EST">2406301500EST</div>
+                <div class="draggable" data-type="SVC">SVC</div>
+                <div class="draggable" data-type="2412192400">2412192400</div>
+                <div class="draggable" data-type="ARTCC">ARTCC</div>
+                <div class="draggable" data-type="OME">OME</div>
+                <div class="draggable" data-type="LOC RNAV BC RWY 2">LOC RNAV BC RWY 2</div>
+            `,
+            9: `
+                <div class="draggable" data-type="!=">!</div>
+                <div class="draggable" data-type="CDV">CDV</div>
+                <div class="draggable" data-type="02/029">02/029</div>
+                <div class="draggable" data-type="CDV">CDV</div>
+                <div class="draggable" data-type="SVC">SVC</div>
+                <div class="draggable" data-type="PCL RWY 09 VASI">PCL RWY 09 VASI</div>
+                <div class="draggable" data-type="U/S EXC LOW INTST">U/S EXC LOW INTST</div>
+                <div class="draggable" data-type="ON CONS">ON CONS</div>
+                <div class="draggable" data-type="2402210634">2402210634</div>
+                <div class="draggable" data-type="2510051500EST">2510051500EST</div>
+                <div class="draggable" data-type="CDB">CDB</div>
+                <div class="draggable" data-type="13/001">13/001</div>
+                <div class="draggable" data-type="RWY">RWY</div>
+                <div class="draggable" data-type="AD">AD</div>
+                <div class="draggable" data-type="PILOT PAPI LIGHTS">PILOT PAPI LIGHTS</div>
+            `
+        };
+
+        let currentPage = 1;
+        let completedPages = {};
+
+        function updateNotamTitle() {
+            $("#notam-title").text(`NOTAM ${currentPage}`);
+        }
+
+        function initDraggable() {
+            console.log("Initializing draggable elements");
+            $(".draggable").draggable({
+                helper: 'clone', // Use a clone as the helper
+                revert: 'invalid', // Revert if not dropped in a valid drop zone
+                opacity: 0.7, // Make the clone slightly transparent while dragging
+                start: function(event, ui) {
+                    $(ui.helper).css("z-index", 100);
+                },
+                stop: function() {
+                    $(this).css("z-index", "auto");
+                }
+            });
+        }
+
+        function initDroppable() {
+            console.log("Initializing droppable elements");
+            $(".dropzone").droppable({
+                accept: ".draggable",
+                tolerance: "intersect",
+                drop: function(event, ui) {
+                    console.log("Droppable drop event triggered");
+                    if ($(this).find('.draggable').length > 0) {
+                        let originalItem = $(this).find('.draggable');
+                        $(this).find('.draggable').remove();
+                        $("#word-bank").append(originalItem);
+                        scrambleDraggables();
+                        initDraggable(); // Reinitialize draggable to ensure continued dragging
+                    }
+                    $(this).find('.draggable').remove(); // Remove any existing draggables
+                    $(ui.draggable).clone().appendTo(this).css({
+                        top: 'auto', left: 'auto', position: 'relative'
+                    }).draggable({
+                        containment: 'document',
+                        revert: 'invalid'
+                    });
+                    $(ui.draggable).hide(); // Hide the original draggable in the word bank
+                    checkCompletion(); // Check if all dropzones are filled correctly
+                }
+            });
+        }
+
+        function initDroppableForCorrectDropzones() {
+            console.log("Initializing droppable elements for correct dropzones only");
+            $(".dropzone").droppable({
+                accept: function(draggable) {
+                    var correctType = $(this).parent().data("correct");
+                    return $(draggable).data("type") === correctType;
+                },
+                tolerance: "intersect",
+                drop: function(event, ui) {
+                    console.log("Droppable drop event triggered for correct dropzone");
+                    var correctType = $(this).parent().data("correct");
+                    if ($(ui.draggable).data("type") === correctType) {
+                        if ($(this).find('.draggable').length > 0) {
+                            let originalItem = $(this).find('.draggable');
+                            $(this).find('.draggable').remove();
+                            $("#word-bank").append(originalItem);
+                            scrambleDraggables();
+                            initDraggable(); // Reinitialize draggable to ensure continued dragging
+                        }
+                        $(this).find('.draggable').remove(); // Remove any existing draggables
+                        $(ui.draggable).clone().appendTo(this).css({
+                            top: 'auto', left: 'auto', position: 'relative'
+                        }).draggable({
+                            containment: 'document',
+                            revert: 'invalid'
+                        });
+                        $(ui.draggable).hide(); // Hide the original draggable in the word bank
+                        checkCompletion(); // Check if all dropzones are filled correctly
+                    } else {
+                        $(ui.draggable).draggable('option', 'revert', true);
+                        console.log("Incorrect item dropped");
+                    }
+                }
+            });
+        }
+
+        function checkCompletion() {
+            let allCorrect = true;
+            $(".dropzone-container").each(function() {
+                if ($(this).find(".draggable").length === 0 || $(this).find(".draggable").data("type") !== $(this).data("correct")) {
+                    allCorrect = false;
+                    return false;
+                }
+            });
+
+            if (allCorrect && (currentPage >= 1 && currentPage <= 9)) {
+                $("#notam-description").show();
+            }
+
+            if (allCorrect && (currentPage >= 1 && currentPage <= 9)) {
+                completedPages[currentPage] = true;
+                if (currentPage === 9) {
+                    $("#finishButton").show();
+                } else {
+                    $("#skipButton").show();
+                }
+            } else {
+                $("#skipButton").hide();
+                $("#finishButton").hide();
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function scrambleDraggables() {
+            console.log("Scrambling draggables");
+            const draggables = $("#word-bank").children().toArray();
+            shuffleArray(draggables);
+            $("#word-bank").html(draggables);
+        }
+
+        function resetDraggables() {
+            console.log("Resetting draggables");
+            completedPages = {};
+            $("#word-bank").html(originalDraggablesHtml[currentPage]);
+            scrambleDraggables();
+            $(".dropzone").empty();
+            initDraggable();
+            if (currentPage >= 1 && currentPage <= 3) {
+                initDroppableForCorrectDropzones();
+            } else {
+                initDroppable();
+            }
+            if (currentPage >= 1 && currentPage <= 9) {
+                $("#notam-description").hide();
+            } else {
+                $("#notam-description").show();
+            }
+            $("#skipButton").hide();
+            $("#finishButton").hide();
+        }
+
+        function loadPage(page) {
+            console.log("Loading page", page);
+            updateNotamTitle();
+            if (page === 1) {
+                $("#backButton").hide();
+                $("#notam-description").text("!ENA 00/000 ENA RWY 02L/20R CLSD WIP LIGHT REPLACEMENT 2405011800-2409092359");
+                $("#notam-description").show();
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ENA">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="00/000">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ENA">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="RWY">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="02L/20R">
+                        <div class="dropzone"></div>
+                        <label>Surface Name/Designator</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="WIP">
+                        <div class="dropzone"></div>
+                        <label>Condition or Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="LIGHT REPLACEMENT">
+                        <div class="dropzone"></div>
+                        <label>Reason or Purpose</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="2405011800">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2409092359">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+            } else if (page === 2) {
+                $("#backButton").show();
+                $("#notam-description").text("!HOM 01/003 HOM TWY A CLSD 2402011600-2402011800");
+                $("#notam-description").show();
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="HOM">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="01/003">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="HOM">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="TWY">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>                
+                    <div class="dropzone-container" data-correct="A">
+                        <div class="dropzone"></div>
+                        <label>Surface Name/Designator</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="CLSD">
+                        <div class="dropzone"></div>
+                        <label>Reason or Purpose</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="2402011600">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2402011800">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+            } else if (page === 3) {
+                $("#backButton").show();
+                $("#notam-description").text("!ENA 07/123 ENA OBST CRANE (ASN UNKNOWN) 603340N1511510W (.25NM SE ENA) UNKNOWN (65FT AGL) NOT LGTD 2405301600-2405310100");
+                $("#notam-description").show();
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ENA">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="07/123">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ENA">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="OBST">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="CRANE">
+                        <div class="dropzone"></div>
+                        <label>Type of Obstruction</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ASN UNKNOWN">
+                        <div class="dropzone"></div>
+                        <label>Obstruction Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="603340N1511510W">
+                        <div class="dropzone"></div>
+                        <label>Coordinates</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="(.25NM SE ENA)">
+                        <div class="dropzone"></div>
+                        <label>Alternate Location Description</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="UNKNOWN">
+                        <div class="dropzone"></div>
+                        <label>Altitude</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="(65FT AGL)">
+                        <div class="dropzone"></div>
+                        <label>Height AGL</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="NOT LGTD">
+                        <div class="dropzone"></div>
+                        <label>Condition</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2405301600">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2405310100">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+            } else if (page === 4) {
+                $("#backButton").show();
+                $("#notam-description").text("!JNU 05/029 JNU OBST TOWER LGT (ASR 1028325) 581804.00N1342632.00W (5.4NM ESE JNU) 285.8FT (277.9FT AGL) U/S 2405201955-2409011955");
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="JNU">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="05/029">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="JNU">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="OBST">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="TOWER LGT">
+                        <div class="dropzone"></div>
+                        <label>Type of Obstruction</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="(ASR 1028325)">
+                        <div class="dropzone"></div>
+                        <label>Obstruction Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="581804.00N1342632.00W">
+                        <div class="dropzone"></div>
+                        <label>Coordinates</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="(5.4NM ESE JNU)">
+                        <div class="dropzone"></div>
+                        <label>Alternate Location Description</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="285.8FT">
+                        <div class="dropzone"></div>
+                        <label>Altitude</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="(277.9FT AGL)">
+                        <div class="dropzone"></div>
+                        <label>Height AGL</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="U/S">
+                        <div class="dropzone"></div>
+                        <label>Condition</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2405201955">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2409011955">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+                $("#notam-description").hide();
+            } else if (page === 5) {
+                $("#backButton").show();
+                $("#notam-description").text("!ENA 02/001 AQY AD ALL SFC WIP SN REMOVAL 2402201800-2402211800");
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ENA">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="02/001">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="AQY">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="AD">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ALL SFC">
+                        <div class="dropzone"></div>
+                        <label>Surface Name/Designator</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="WIP">
+                        <div class="dropzone"></div>
+                        <label>Condition or Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="SN REMOVAL">
+                        <div class="dropzone"></div>
+                        <label>Reason or Purpose</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="2402201800">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2402211800">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+                $("#notam-description").hide();
+            } else if (page === 6) {
+                $("#backButton").show();
+                $("#notam-description").text("!ANC 06/010 ANC AIRSPACE UAS WI AN AREA DEFINED AS 0.5NM RADIUS OF 612418N1500400W (BGQ178011) SFC-1200FT DLY 1700-0700 2406081700-2406170700");
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ANC">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="06/010">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ANC">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="AIRSPACE">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="UAS">
+                        <div class="dropzone"></div>
+                        <label>Type or Restriction</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="WI AN AREA DEFINED AS 0.5NM RADIUS OF">
+                        <div class="dropzone"></div>
+                        <label>Description of Area Impacted</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="612418N1500400W">
+                        <div class="dropzone"></div>
+                        <label>Coordinates</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="(BGQ178011)">
+                        <div class="dropzone"></div>
+                        <label>Alternate Description fix/radial</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="SFC-1200FT">
+                        <div class="dropzone"></div>
+                        <label>Lower&Upper Limit, or Height</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="DLY 1700-0700">
+                        <div class="dropzone"></div>
+                        <label>Schedule of individual area</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2406081700">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2406170700">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+                $("#notam-description").hide();
+            } else if (page === 7) {
+                $("#backButton").show();
+                $("#notam-description").text("!SCC 05/085 SCC AD AP INCREASED MIGRATORY BIRD AND WATERFOWL ACT 2405101425-2409302359");
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="SCC">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="05/085">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="SCC">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="AD">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="AP">
+                        <div class="dropzone"></div>
+                        <label>Surface Name/Designator</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="INCREASED MIGRATORY BIRD AND WATERFOWL ACT">
+                        <div class="dropzone"></div>
+                        <label>Condition or Activity</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="2405101425">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2409302359">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+                $("#notam-description").hide();
+            } else if (page === 8) {
+                $("#backButton").show();
+                $("#notam-description").text("!BRW 02/258 BRW NAV ILS RWY 8 DME NOT MNT 2402171205-2406301500EST");
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="BRW">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="02/258">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="BRW">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="NAV">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ILS RWY 8">
+                        <div class="dropzone"></div>
+                        <label>Surface Name/Designator</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="DME">
+                        <div class="dropzone"></div>
+                        <label>Designator</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="NOT MNT">
+                        <div class="dropzone"></div>
+                        <label>Condition</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="2402171205">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2406301500EST">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+                $("#notam-description").hide();
+            } else if (page === 9) {
+                $("#backButton").show();
+                $("#notam-description").text("!CDV 02/029 CDV SVC PCL RWY 09 VASI U/S EXC LOW INTST ON CONS 2402210634-2510051500EST");
+                $("#notam-description").show();
+                $("#word-bank").html(originalDraggablesHtml[page]);
+                $(".template").html(`
+                    <div class="dropzone-container" data-correct="!=">
+                        <div class="dropzone"></div>
+                        <label>ADP Code</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="CDV">
+                        <div class="dropzone"></div>
+                        <label>Accountability Location</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="02/029">
+                        <div class="dropzone"></div>
+                        <label>NOTAM Number</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="CDV">
+                        <div class="dropzone"></div>
+                        <label>Location Identifier</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="SVC">
+                        <div class="dropzone"></div>
+                        <label>Keyword</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="PCL RWY 09 VASI">
+                        <div class="dropzone"></div>
+                        <label>Feature, Service, Facility or System</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="U/S EXC LOW INTST">
+                        <div class="dropzone"></div>
+                        <label>Condition1</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="ON CONS">
+                        <div class="dropzone"></div>
+                        <label>Condition2</label>
+                    </div>
+                `);
+                $(".left-aligned").html(`
+                    <div class="dropzone-container" data-correct="2402210634">
+                        <div class="dropzone"></div>
+                        <label>Start of Activity</label>
+                    </div>
+                    <div class="dropzone-container" data-correct="2510051500EST">
+                        <div class="dropzone"></div>
+                        <label>End of Validity</label>
+                    </div>
+                `);
+                $("#notam-description").hide();
+            }
+            if (completedPages[page]) {
+                restoreCompletedPage(page);
+            } else {
+                $("#notam-description").hide();
+                $("#skipButton").hide();
+                $("#finishButton").hide();
+            }
+
+            scrambleDraggables();
+            initDraggable();
+            if (page >= 1 && page <= 3) {
+                initDroppableForCorrectDropzones();
+            } else {
+                initDroppable();
+            }
+        }
+
+        function restoreCompletedPage(page) {
+            $("#notam-description").show();
+            if (page === 9) {
+                $("#finishButton").show();
+            } else {
+                $("#skipButton").show();
+            }
+            $(".dropzone-container").each(function() {
+                const correctType = $(this).data("correct");
+                $(this).find(".dropzone").append(
+                    `<div class="draggable" data-type="${correctType}">${correctType}</div>`
+                );
+                $(this).find(".draggable").draggable({
+                    containment: 'document',
+                    revert: 'invalid'
+                });
+            });
+        }
+
+        $("#resetButton").click(function() {
+            resetDraggables();
+        });
+
+        $("#skipButton").click(function() {
+            currentPage++;
+            loadPage(currentPage);
+        });
+
+        $("#backButton").click(function() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadPage(currentPage);
+            }
+        });
+
+        $("#finishButton").click(function() {
+            window.location.href = "video.mp4";
+        });
+
+        // Hidden link triggered by clicking the letter "T" in the NOTAM title
+        $("#hidden-next").click(function() {
+            currentPage++;
+            loadPage(currentPage);
+        });
+
+        loadPage(currentPage);
+    });
+</script>
+
+</body>
+</html>
