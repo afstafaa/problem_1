@@ -104,6 +104,11 @@
         #finishButton.red {
             background-color: red;
             color: white;
+            border: 1px solid red;
+        }
+
+        #finishButton {
+            display: none;
         }
     </style>
 </head>
@@ -128,7 +133,7 @@
 <button id="resetButton" class="start">START</button>
 <button id="backButton" style="display: none;">Back</button>
 <button id="skipButton" style="display: none;">Next</button>
-<button id="finishButton" class="red" style="display: none;">FINISH</button>
+<button id="finishButton" style="display: none;">FINISH</button>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
@@ -369,7 +374,7 @@
             if (allCorrect && (currentPage >= 1 && currentPage <= 9)) {
                 completedPages[currentPage] = true;
                 if (currentPage === 9) {
-                    $("#finishButton").show();
+                    $("#finishButton").addClass("red").show(); // Change to red and show
                 } else {
                     $("#skipButton").show();
                 }
@@ -895,7 +900,6 @@
                     </div>
                 `);
                 $("#notam-description").hide();
-                $("#finishButton").addClass("red");
             }
             if (completedPages[page]) {
                 restoreCompletedPage(page);
@@ -917,7 +921,7 @@
         function restoreCompletedPage(page) {
             $("#notam-description").show();
             if (page === 9) {
-                $("#finishButton").show();
+                $("#finishButton").addClass("red").show(); // Change to red and show
             } else {
                 $("#skipButton").show();
             }
