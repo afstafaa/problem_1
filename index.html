@@ -32,7 +32,7 @@
             text-align: left;
             font-size: 36px;
             margin-bottom: 40px;
-	    font-weight: normal; /* Ensure font is not bold */
+	        font-weight: normal; /* Ensure font is not bold */
         }
 
         #notam-description {
@@ -95,6 +95,12 @@
             background-color: #e0e0e0; /* Changes background on hover */
         }
 
+        #resetButton.start {
+            background-color: red;
+            color: white;
+            font-weight: bold;
+        }
+
         #finishButton {
             display: none;
         }
@@ -118,7 +124,7 @@
 <div class="template"></div>
 <div class="template left-aligned"></div>
 
-<button id="resetButton">Reset</button>
+<button id="resetButton" class="start">START</button>
 <button id="backButton" style="display: none;">Back</button>
 <button id="skipButton" style="display: none;">Next</button>
 <button id="finishButton" style="display: none;">FINISH</button>
@@ -926,6 +932,13 @@
         }
 
         $("#resetButton").click(function() {
+            if ($(this).hasClass("start")) {
+                $(this).removeClass("start").text("Reset").css({
+                    "background-color": "#f8f8f8",
+                    "color": "black",
+                    "border": "1px solid #ccc",
+                });
+            }
             resetDraggables();
         });
 
